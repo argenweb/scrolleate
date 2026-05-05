@@ -1,0 +1,43 @@
+body {
+  margin: 0;
+  background: #000;
+  overflow-y: scroll;
+  font-family: sans-serif;
+}
+
+#gallery {
+  column-count: 4;
+  column-gap: 0;
+}
+
+@media (max-width: 1200px) {
+  #gallery { column-count: 3; }
+}
+
+@media (max-width: 800px) {
+  #gallery { column-count: 2; }
+}
+
+@media (max-width: 500px) {
+  #gallery { column-count: 1; }
+}
+
+.image {
+  width: 100%;
+  display: block;
+  margin: 0;
+  break-inside: avoid;
+}
+
+#modeToggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 20px;
+  cursor: pointer;
+}

@@ -1,32 +1,22 @@
 body {
   margin: 0;
   background: #000;
-  overflow-y: scroll;
   font-family: sans-serif;
+  overflow-y: scroll;
 }
 
 #gallery {
-  column-count: 4;
-  column-gap: 0;
-}
-
-@media (max-width: 1200px) {
-  #gallery { column-count: 3; }
-}
-
-@media (max-width: 800px) {
-  #gallery { column-count: 2; }
-}
-
-@media (max-width: 500px) {
-  #gallery { column-count: 1; }
-}
-
-.image {
   width: 100%;
+}
+
+.row {
+  display: flex;
+  width: 100%;
+}
+
+.row img {
   display: block;
-  margin: 0;
-  break-inside: avoid;
+  object-fit: cover;
 }
 
 #modeToggle {
@@ -40,4 +30,5 @@ body {
   height: 50px;
   font-size: 20px;
   cursor: pointer;
+  z-index: 10;
 }

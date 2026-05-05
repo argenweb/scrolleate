@@ -7,7 +7,12 @@ body {
 
 #gallery {
   width: 100%;
-  overflow: hidden;
+}
+
+.full-image {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .row {

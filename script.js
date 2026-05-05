@@ -1,54 +1,49 @@
 const gallery = document.getElementById("gallery");
 const toggleBtn = document.getElementById("modeToggle");
 
-const TOTAL_IMAGES = 100;      // total real
-const SHUFFLE_POOL_SIZE = 100; // cantidad a mostrar en random
-const BATCH_SIZE = 25;
-const TARGET_ROW_HEIGHT = 250;
+const TOTAL_IMAGES = 100;
+const BATCH_SIZE = 20;
+const TARGET_ROW_HEIGHT = 220;
 
-let loaded = 0;
 let mode = "sequential";
-
-let shuffleList = [];
-let shuffleIndex = 0;
-
+let imageOrder = [];
+let currentIndex = 0;
 let buffer = [];
 
-// 🔀 Shuffle correcto del TOTAL y luego recorte
-function generateRandomSelection(total, size) {
-  const arr = Array.from({ length: total }, (_, i) => i + 1);
-
-  // Fisher-Yates completo
-  for (let i = arr.length - 1; i > 0; i--) {
+// 🔀 Shuffle real
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    [array[i], array[j]] = [array[j], array[i]];
   }
-
-  return arr.slice(0, size);
+  return array;
 }
 
-// 📦 Obtener siguiente imagen
+// 🧠 Inicializar orden SIEMPRE correcto
+function initOrder() {
+  const base = Array.from({ length: TOTAL_IMAGES }, (_, i) => i + 1);
+
+  imageOrder = mode === "random" ? shuffle(base) : base;
+
+  currentIndex = 0;
+}
+
+// 📦 Siguiente imagen
 function getNextImage() {
-  if (mode === "sequential") {
-    loaded++;
-    if (loaded > TOTAL_IMAGES) return null;
-    return loaded;
-  } else {
-    if (shuffleIndex >= shuffleList.length) return null;
-    return shuffleList[shuffleIndex++];
-  }
+  if (currentIndex >= imageOrder.length) return null;
+  return imageOrder[currentIndex++];
 }
 
 // 📦 Cargar imagen
 function loadImage(num) {
   return new Promise((resolve) => {
     const img = new Image();
-    img.src = `images/${num}.jpg?cache=${Date.now()}`; // evita cache fuerte
+    img.src = `images/${num}.jpg`;
 
     img.onload = () => {
       resolve({
         element: img,
-        ratio: img.width / img.height
+        ratio: img.naturalWidth / img.naturalHeight
       });
     };
 
@@ -56,13 +51,14 @@ function loadImage(num) {
   });
 }
 
-// 🧠 Construir fila
+// 📐 Construir fila JUSTIFICADA (SIEMPRE llena ancho)
 function buildRow(images) {
   const row = document.createElement("div");
   row.className = "row";
 
+  const containerWidth = gallery.clientWidth;
+
   const totalRatio = images.reduce((sum, img) => sum + img.ratio, 0);
-  const containerWidth = window.innerWidth;
   const height = containerWidth / totalRatio;
 
   images.forEach(imgData => {
@@ -79,66 +75,87 @@ function buildRow(images) {
 async function loadImages() {
   for (let i = 0; i < BATCH_SIZE; i++) {
     const num = getNextImage();
-    if (!num) return;
+    if (!num) {
+      flushBuffer();
+      return;
+    }
 
     const data = await loadImage(num);
     if (!data) continue;
 
     buffer.push(data);
 
-    let rowRatio = buffer.reduce((sum, img) => sum + img.ratio, 0);
+    const rowRatio = buffer.reduce((sum, img) => sum + img.ratio, 0);
 
-    if (rowRatio * TARGET_ROW_HEIGHT >= window.innerWidth) {
+    if (rowRatio * TARGET_ROW_HEIGHT >= gallery.clientWidth) {
+
+      // 👉 A veces hacer fila de 1 imagen (SIN romper layout)
+      if (buffer.length > 1 && Math.random() < 0.2) {
+        buildRow([buffer[0]]);
+        buffer.shift();
+        continue;
+      }
+
       buildRow(buffer);
       buffer = [];
     }
   }
 }
 
-// 🔁 Scroll infinito
+// 🧩 Última fila (sin justificar)
+function flushBuffer() {
+  if (!buffer.length) return;
+
+  const row = document.createElement("div");
+  row.className = "row";
+
+  buffer.forEach(imgData => {
+    const img = imgData.element;
+    img.style.height = TARGET_ROW_HEIGHT + "px";
+    img.style.width = "auto";
+    row.appendChild(img);
+  });
+
+  gallery.appendChild(row);
+  buffer = [];
+}
+
+// 🔁 Scroll
 window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500) {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
     loadImages();
   }
 });
 
-// 🔀 Toggle modo
+// 🔀 Toggle
 toggleBtn.addEventListener("click", () => {
   mode = mode === "sequential" ? "random" : "sequential";
 
-  gallery.innerHTML = "";
-  loaded = 0;
-  buffer = [];
-
-  if (mode === "random") {
-    shuffleList = generateRandomSelection(TOTAL_IMAGES, SHUFFLE_POOL_SIZE);
-    shuffleIndex = 0;
-  }
-
+  reset();
+  initOrder();
   loadImages();
 });
 
-// 📱 Reflow resize
-window.addEventListener("resize", () => {
-  const imgs = Array.from(document.querySelectorAll("img")).map(img => ({
-    element: img,
-    ratio: img.naturalWidth / img.naturalHeight
-  }));
-
+// 🔄 Reset limpio
+function reset() {
   gallery.innerHTML = "";
   buffer = [];
+  currentIndex = 0;
+}
 
-  imgs.forEach(img => {
-    buffer.push(img);
+// 📱 Resize FIX REAL
+let resizeTimeout;
 
-    let rowRatio = buffer.reduce((sum, i) => sum + i.ratio, 0);
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimeout);
 
-    if (rowRatio * TARGET_ROW_HEIGHT >= window.innerWidth) {
-      buildRow(buffer);
-      buffer = [];
-    }
-  });
+  resizeTimeout = setTimeout(() => {
+    reset();
+    initOrder(); // 🔥 ESTO FALTABA
+    loadImages();
+  }, 200);
 });
 
-// 🚀 Inicial (IMPORTANTE: iniciar random bien si quisieras)
+// 🚀 INIT
+initOrder();
 loadImages();

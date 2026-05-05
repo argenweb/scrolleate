@@ -1,7 +1,7 @@
 const gallery = document.getElementById("gallery");
 const toggleBtn = document.getElementById("modeToggle");
 
-const TOTAL_IMAGES = 1000; // 🔥 ajusta esto a tu cantidad real
+const TOTAL_IMAGES = 100; // 🔥 ajusta esto a tu cantidad real
 const BATCH_SIZE = 20;
 
 let loaded = 0;

@@ -1,7 +1,7 @@
 const gallery = document.getElementById("gallery");
 const toggleBtn = document.getElementById("modeToggle");
 
-const TOTAL_IMAGES = 403; // ajustar esta cantidad cada vez que se suben img
+const TOTAL_IMAGES = 404; // ajustar esta cantidad cada vez que se suben img
 const BATCH_SIZE = 3;
 
 let mode = "random"; // arranca en random directamente
